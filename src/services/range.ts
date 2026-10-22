@@ -10,3 +10,8 @@ async function getJson<T>(path: string): Promise<T> {
 export function getRange(): Promise<{ min: number; max: number }> {
   return getJson('/api/range');
 }
+
+export async function getRangeValues(): Promise<number[]> {
+  const { rangeValues } = await getJson<{ rangeValues: number[] }>('/api/range-values');
+  return rangeValues;
+}
