@@ -1,4 +1,3 @@
-// The mock API lives in this same app; a real backend would only change API_BASE_URL.
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:8080';
 
 async function getJson<T>(path: string): Promise<T> {

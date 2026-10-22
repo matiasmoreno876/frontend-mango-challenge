@@ -7,7 +7,6 @@
     background: #fff;
   }
 
-  /* Preflight resets headings and links; give the plain pages readable defaults back. */
   h1 {
     @apply my-4 text-3xl font-bold;
   }

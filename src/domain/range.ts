@@ -15,13 +15,11 @@ export function percentToValue(percent: number, min: number, max: number): numbe
   return min + (clamp(percent, 0, 100) / 100) * (max - min);
 }
 
-// Each handle is limited by the bounds and by the other handle: they can touch, never cross.
 export function moveHandle(range: RangeValue, handle: Handle, next: number, { min, max }: Bounds): RangeValue {
   const [lower, upper] = range;
   return handle === 'lower' ? [clamp(next, min, upper), upper] : [lower, clamp(next, lower, max)];
 }
 
-// When both handles overlap, the side of the value decides which one can actually move there.
 export function nearestHandle([lower, upper]: RangeValue, value: number): Handle {
   if (value < lower) return 'lower';
   if (value > upper) return 'upper';

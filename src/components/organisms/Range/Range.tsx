@@ -14,7 +14,6 @@ type RangeProps = (NormalRangeProps | FixedRangeProps) & { onChange?: (value: Ra
 
 const HANDLE_LABELS: Record<HandleName, string> = { lower: 'Minimum value', upper: 'Maximum value' };
 
-// WAI-ARIA slider keys. Returns null for keys the slider does not handle.
 function valueForKey(key: string, current: number, pageStep: number, lowest: number, highest: number): number | null {
   switch (key) {
     case 'ArrowRight':
@@ -38,14 +37,11 @@ function valueForKey(key: string, current: number, pageStep: number, lowest: num
 
 export function Range(props: RangeProps) {
   const { values, onChange } = props;
-  // Fixed mode is the normal range over the indexes of `values`: integer positions give snapping,
-  // keyboard steps and even spacing for free. `toValue` turns a position back into the real value.
   const min = values ? 0 : props.min;
   const max = values ? values.length - 1 : props.max;
   const toValue = (position: number) => (values ? values[position] : position);
 
   const [positions, setPositions] = useState<RangeValue>(props.defaultValue ?? [min, max]);
-  // 'either': pressed while both handles overlap; the first move decides which one is dragged.
   const [dragging, setDragging] = useState<HandleName | 'either' | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [lower, upper] = positions;
@@ -64,9 +60,7 @@ export function Range(props: RangeProps) {
   }
 
   function handlePointerDown(handle: HandleName, event: PointerEvent<HTMLDivElement>) {
-    // Capture keeps move/up events (and the grabbing cursor) on the handle even when the pointer leaves it.
     event.currentTarget.setPointerCapture(event.pointerId);
-    // Overlapping handles: only the top one can be pressed, so let the drag direction pick.
     setDragging(lower === upper ? 'either' : handle);
   }
 
@@ -79,7 +73,6 @@ export function Range(props: RangeProps) {
   }
 
   function handleTrackPointerDown(event: PointerEvent<HTMLDivElement>) {
-    // Presses on a handle bubble up here too; only bare clicks on the line move a handle.
     if (event.target !== event.currentTarget) return;
     const next = valueAtPointer(event.clientX);
     update(nearestHandle(positions, next), next);
@@ -113,7 +106,6 @@ export function Range(props: RangeProps) {
 
   function renderLabel(handle: HandleName) {
     const position = handle === 'lower' ? lower : upper;
-    // S15: in fixed mode the values are only a label, not editable.
     if (values) return <CurrencyLabel value={toValue(position)} />;
     return <EditableLabel label={HANDLE_LABELS[handle]} value={position} onCommit={(next) => update(handle, next)} />;
   }
@@ -125,7 +117,6 @@ export function Range(props: RangeProps) {
       onPointerUp={() => setDragging(null)}
       onPointerCancel={() => setDragging(null)}
     >
-      {/* Fixed-width slots: label text changes width with the value ("1€" → "100€"); without this the line shifts. */}
       <div className="flex w-20 flex-none justify-end">{renderLabel('lower')}</div>
       <Track ref={trackRef} onPointerDown={handleTrackPointerDown}>
         {renderHandle('lower')}

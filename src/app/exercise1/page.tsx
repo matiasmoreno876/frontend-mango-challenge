@@ -4,7 +4,6 @@ import { Range } from '@/components/organisms/Range/Range';
 import { getRange } from '@/services/range';
 
 export default async function Exercise1Page() {
-  // Fetch at request time: the mock API is served by this same app, so it is not up during `next build`.
   await connection();
   const { min, max } = await getRange();
 

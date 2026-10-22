@@ -5,7 +5,6 @@ import { Range } from './Range';
 const lower = () => screen.getByRole('slider', { name: 'Minimum value' });
 const upper = () => screen.getByRole('slider', { name: 'Maximum value' });
 
-// jsdom has no layout: give the track a 0..100px box so clientX maps 1:1 to percent.
 function mockTrackBox() {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     left: 0, width: 100, top: 0, height: 4, right: 100, bottom: 4, x: 0, y: 0, toJSON: () => ({}),
@@ -126,7 +125,6 @@ describe('Range (normal mode)', () => {
       mockTrackBox();
       render(<Range min={0} max={100} defaultValue={[50, 50]} />);
 
-      // The upper handle is rendered on top, so it is the one that receives the press.
       fireEvent.pointerDown(upper(), { pointerId: 1, clientX: 50 });
       fireEvent.pointerMove(upper(), { pointerId: 1, clientX: 30 });
 
@@ -281,7 +279,6 @@ describe('Range (fixed values mode)', () => {
     mockTrackBox();
     render(<Range values={values} />);
 
-    // 6 values → positions at 0, 20, 40, 60, 80, 100%. 47% is closest to 40% → 10.99.
     fireEvent.pointerDown(lower(), { pointerId: 1, clientX: 0 });
     fireEvent.pointerMove(lower(), { pointerId: 1, clientX: 47 });
 
