@@ -3,16 +3,14 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { Handle } from '@/components/atoms/Handle/Handle';
 import { Track } from '@/components/atoms/Track/Track';
+import { CurrencyLabel } from '@/components/atoms/CurrencyLabel/CurrencyLabel';
 import { EditableLabel } from '@/components/molecules/EditableLabel/EditableLabel';
 import { formatCurrency } from '@/domain/currency';
 import { moveHandle, nearestHandle, percentToValue, valueToPercent, type Handle as HandleName, type RangeValue } from '@/domain/range';
 
-type RangeProps = {
-  min: number;
-  max: number;
-  defaultValue?: RangeValue;
-  onChange?: (value: RangeValue) => void;
-};
+type NormalRangeProps = { min: number; max: number; defaultValue?: RangeValue; values?: never };
+type FixedRangeProps = { values: readonly number[]; min?: never; max?: never; defaultValue?: never };
+type RangeProps = (NormalRangeProps | FixedRangeProps) & { onChange?: (value: RangeValue) => void };
 
 const HANDLE_LABELS: Record<HandleName, string> = { lower: 'Minimum value', upper: 'Maximum value' };
 
@@ -38,8 +36,15 @@ function valueForKey(key: string, current: number, pageStep: number, lowest: num
   }
 }
 
-export function Range({ min, max, defaultValue, onChange }: RangeProps) {
-  const [positions, setPositions] = useState<RangeValue>(defaultValue ?? [min, max]);
+export function Range(props: RangeProps) {
+  const { values, onChange } = props;
+  // Fixed mode is the normal range over the indexes of `values`: integer positions give snapping,
+  // keyboard steps and even spacing for free. `toValue` turns a position back into the real value.
+  const min = values ? 0 : props.min;
+  const max = values ? values.length - 1 : props.max;
+  const toValue = (position: number) => (values ? values[position] : position);
+
+  const [positions, setPositions] = useState<RangeValue>(props.defaultValue ?? [min, max]);
   // 'either': pressed while both handles overlap; the first move decides which one is dragged.
   const [dragging, setDragging] = useState<HandleName | 'either' | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -50,7 +55,7 @@ export function Range({ min, max, defaultValue, onChange }: RangeProps) {
     const nextValue = moveHandle(positions, handle, next, { min, max });
     if (nextValue[0] === lower && nextValue[1] === upper) return;
     setPositions(nextValue);
-    onChange?.(nextValue);
+    onChange?.([toValue(nextValue[0]), toValue(nextValue[1])]);
   }
 
   function valueAtPointer(clientX: number): number {
@@ -94,10 +99,10 @@ export function Range({ min, max, defaultValue, onChange }: RangeProps) {
     return (
       <Handle
         label={HANDLE_LABELS[handle]}
-        value={position}
-        min={isLower ? min : lower}
-        max={isLower ? upper : max}
-        valueText={formatCurrency(position)}
+        value={toValue(position)}
+        min={toValue(isLower ? min : lower)}
+        max={toValue(isLower ? upper : max)}
+        valueText={formatCurrency(toValue(position))}
         percent={valueToPercent(position, min, max)}
         isDragging={dragging === handle}
         onPointerDown={(event) => handlePointerDown(handle, event)}
@@ -108,6 +113,8 @@ export function Range({ min, max, defaultValue, onChange }: RangeProps) {
 
   function renderLabel(handle: HandleName) {
     const position = handle === 'lower' ? lower : upper;
+    // S15: in fixed mode the values are only a label, not editable.
+    if (values) return <CurrencyLabel value={toValue(position)} />;
     return <EditableLabel label={HANDLE_LABELS[handle]} value={position} onCommit={(next) => update(handle, next)} />;
   }
 

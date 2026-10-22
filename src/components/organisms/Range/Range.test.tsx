@@ -245,3 +245,72 @@ describe('Range click on the line (single-pointer alternative to dragging)', () 
     expect(lower()).toHaveAttribute('aria-valuenow', '20');
   });
 });
+
+describe('Range (fixed values mode)', () => {
+  const values = [1.99, 5.99, 10.99, 30.99, 50.99, 70.99];
+
+  it('starts at the first and last values and shows them as read-only labels', () => {
+    render(<Range values={values} />);
+
+    expect(lower()).toHaveAttribute('aria-valuenow', '1.99');
+    expect(upper()).toHaveAttribute('aria-valuenow', '70.99');
+    expect(screen.getByText('1.99€')).toBeInTheDocument();
+    expect(screen.getByText('70.99€')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('places the allowed values evenly along the line, as in the design', () => {
+    render(<Range values={values} />);
+
+    expect(lower()).toHaveStyle({ left: '0%' });
+    expect(upper()).toHaveStyle({ left: '100%' });
+  });
+
+  it('moves to the next or previous allowed value with the keyboard', () => {
+    render(<Range values={values} />);
+
+    fireEvent.keyDown(lower(), { key: 'ArrowRight' });
+    fireEvent.keyDown(upper(), { key: 'ArrowLeft' });
+
+    expect(lower()).toHaveAttribute('aria-valuenow', '5.99');
+    expect(lower()).toHaveAttribute('aria-valuetext', '5.99€');
+    expect(upper()).toHaveAttribute('aria-valuenow', '50.99');
+  });
+
+  it('snaps a dragged handle to the nearest allowed value', () => {
+    mockTrackBox();
+    render(<Range values={values} />);
+
+    // 6 values → positions at 0, 20, 40, 60, 80, 100%. 47% is closest to 40% → 10.99.
+    fireEvent.pointerDown(lower(), { pointerId: 1, clientX: 0 });
+    fireEvent.pointerMove(lower(), { pointerId: 1, clientX: 47 });
+
+    expect(lower()).toHaveAttribute('aria-valuenow', '10.99');
+  });
+
+  it('never lets the handles cross', () => {
+    render(<Range values={values} />);
+
+    fireEvent.keyDown(upper(), { key: 'Home' });
+
+    expect(upper()).toHaveAttribute('aria-valuenow', '1.99');
+    expect(lower()).toHaveAttribute('aria-valuenow', '1.99');
+  });
+
+  it('notifies the selected values through onChange', () => {
+    const onChange = vi.fn();
+    render(<Range values={values} onChange={onChange} />);
+
+    fireEvent.keyDown(lower(), { key: 'ArrowRight' });
+
+    expect(onChange).toHaveBeenCalledWith([5.99, 70.99]);
+  });
+});
+
+describe('Range props', () => {
+  it('rejects mixing both modes at compile time (checked by `npm run typecheck`)', () => {
+    // @ts-expect-error `values` cannot be combined with `min`/`max`.
+    const mixed = <Range min={1} max={100} values={[1, 2]} />;
+    expect(mixed).toBeTruthy();
+  });
+});
