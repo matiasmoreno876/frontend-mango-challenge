@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@layer base {
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color: #111;
+    background: #fff;
+  }
+
+  /* Preflight resets headings and links; give the plain pages readable defaults back. */
+  h1 {
+    @apply my-4 text-3xl font-bold;
+  }
+
+  a {
+    @apply underline;
+  }
+}
